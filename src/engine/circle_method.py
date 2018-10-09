@@ -1,16 +1,16 @@
-from engine.vanishingpoint import VanishingPointEng
-from opencv_engine import *
-from engine.mathsengine import *
 import cv2
 import numpy as np
+
+from opencv_engine import *
+from engine.mathsengine import *
 from engine.otsu_method import *
 from util.draw_util import draw_line
 
-red = (0, 0, 255)
-green = (0, 255, 0)
+RED = (0, 0, 255)
+GREEN = (0, 255, 0)
 blue = (255, 0, 0)
 
-color_list = [green, blue, red]
+color_list = [GREEN, blue, RED]
 
 
 def auto_detect_vp(input_file, n_vp):
