@@ -1,0 +1,124 @@
+#VRML V2.0 utf8 
+# A Cylinder 
+Group {
+    children[
+        Shape {
+            appearance Appearance { 
+                material Material { } 
+                texture ImageTexture { 
+                    url "empty.png" 
+                }
+            } 
+            geometry IndexedFaceSet {
+                coord Coordinate {
+                    point  [
+                        #P4#,
+                        #P8#,
+                        #P5#,
+                        #P1#,
+                    ]
+                }
+                coordIndex [
+                    0 1 2 3
+                ]
+            }
+        },
+        Shape {
+            appearance Appearance { 
+                material Material { } 
+                texture ImageTexture { 
+                    url "#LEFT#" 
+                }
+                textureTransform TextureTransform {
+                    rotation 3.14159265359
+                }
+            } 
+            geometry IndexedFaceSet {
+                coord Coordinate {
+                    point  [
+                        #P2#,
+                        #P6#,
+                        #P7#,
+                        #P3#,
+                    ]
+                }
+                coordIndex [
+                    0 1 2 3
+                ]
+                texCoord TextureCoordinate {
+                    point [
+                        1 0,
+                        1 1,
+                        0 1,
+                        0 0
+                    ]
+                }
+            }
+        },
+        Shape {
+            appearance Appearance { 
+                material Material { } 
+                texture ImageTexture { 
+                    url "#RIGHT#" 
+                }
+                textureTransform TextureTransform {
+                    rotation 3.14159265359
+                }
+            } 
+            geometry IndexedFaceSet {
+                coord Coordinate {
+                    point  [
+                        #P3#,
+                        #P7#,
+                        #P8#,
+                        #P4#,
+                    ]
+                }
+                coordIndex [
+                    0 1 2 3
+                ]
+                texCoord TextureCoordinate {
+                    point [
+                        1 0,
+                        1 1,
+                        0 1,
+                        0 0
+                    ]
+                }
+            }
+        },
+        Shape {
+            appearance Appearance { 
+                material Material { } 
+                texture ImageTexture { 
+                    url "#TOP#" 
+                }
+                textureTransform TextureTransform {
+                    rotation 1.57079632679
+                }
+            } 
+            geometry IndexedFaceSet {
+                coord Coordinate {
+                    point  [
+                        #P1#,
+                        #P2#,
+                        #P3#,
+                        #P4#,
+                    ]
+                }
+                coordIndex [
+                    0 1 2 3
+                ]
+                texCoord TextureCoordinate {
+                    point [
+                        1 0,
+                        1 1,
+                        0 1,
+                        0 0
+                    ]
+                }
+            }
+        },
+    ]
+}
+
