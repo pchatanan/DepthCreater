@@ -17,7 +17,7 @@ def auto_detect_vp(input_file):
     np.random.seed(0)
 
     # Step1: Extract line segments
-    img = cv2.imread(input_file.base)
+    img = cv2.imread(input_file.abspath)
     height, width, channels = img.shape
     grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -118,11 +118,11 @@ def auto_detect_vp(input_file):
                     index_in_band = indexes
         circles_extracted.append((best_center, best_radius))
 
-        cv2.circle(points_clustered, (int(round(best_center[0])), int(round(best_center[1]))), int(round(best_radius)), (255, 0, 255),
+        cv2.circle(points_clustered, (int(round(best_center[0] + x_shift)), int(round(best_center[1]+ y_shift))) , int(round(best_radius)), (255, 0, 255),
                    3)
-        cv2.circle(points_clustered, (int(round(best_center[0])), int(round(best_center[1]))), int(round(best_radius + threshold)),
+        cv2.circle(points_clustered, (int(round(best_center[0] + x_shift)), int(round(best_center[1]+ y_shift))) , int(round(best_radius + threshold)),
                    (100, 0, 255), 1)
-        cv2.circle(points_clustered, (int(round(best_center[0])), int(round(best_center[1]))), int(round(best_radius - threshold)),
+        cv2.circle(points_clustered, (int(round(best_center[0] + x_shift)) , int(round(best_center[1]+ y_shift))) , int(round(best_radius - threshold)),
                    (100, 0, 255), 1)
 
         # draw lines

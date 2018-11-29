@@ -51,7 +51,7 @@ class CentralWidget(QWidget):
                                                    "Images (*.png *.jpg);;All Files (*)", options=options)
         if file_name:
             self.window().input_file = FileManager(file_name)
-            self.img_path = self.window().input_file.name
+            self.img_path = self.window().input_file.abspath
             self.load_image(self.img_path)
 
     def load_image(self, file_name):

@@ -32,8 +32,8 @@ class MainWindow(QMainWindow):
         self.line_group_dock = None
         self.point_dock = None
 
-        self.input_file = FileManager("building.jpg")
-        self.central_widget = CentralWidget(self.input_file.base, self.on_image_loaded, flags=None)
+        self.input_file = FileManager("./sample_images/building.jpg")
+        self.central_widget = CentralWidget(self.input_file.abspath, self.on_image_loaded, flags=None)
         self.setCentralWidget(self.central_widget)
 
         # main menu bar
