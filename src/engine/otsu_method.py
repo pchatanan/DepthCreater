@@ -4,6 +4,8 @@ from itertools import combinations
 
 def multi_otsu(grey, n_split=1, upper=256):
     bins = np.bincount(grey.ravel())
+    while bins.shape[0] < 256:
+        bins = np.append(bins, 0)
     bins = bins[:upper]
     p_list = bins / bins.sum()
     L = np.arange(upper)

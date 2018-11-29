@@ -59,40 +59,54 @@ class LayerWidget(QWidget):
 
 
 class SelectInitCoordinate(QDockWidget):
-    def __init__(self, vanish_point_eng, *__args):
+    def __init__(self, vp_eng, *__args):
         super().__init__(*__args)
-        self.vanish_point_eng = vanish_point_eng
+        self.vp_eng = None
+        self.point_selected = None
 
-        self.point_selected = []
-        # point0 = self.vanish_point_eng.coordinates[self.point_selected[0]]
-        # point1 = self.vanish_point_eng.coordinates[self.point_selected[1]]
+        self.list_widget = None
+        self.main_layout = None
+        self.main_widget = None
+
+        self.reset(vp_eng)
 
         # set UI
+
+        # self.xy_button = QPushButton("Use XY")
+        # self.xy_button.clicked.connect(lambda: self.extract_side("XY", self.vp_eng.coordinates[self.point_selected[0]], self.vp_eng.coordinates[self.point_selected[1]]))
+        # self.xz_button = QPushButton("Use XZ")
+        # self.xz_button.clicked.connect(lambda: self.extract_side("XZ", self.vp_eng.coordinates[self.point_selected[0]], self.vp_eng.coordinates[self.point_selected[1]]))
+        # self.yz_button = QPushButton("Use YZ")
+        # self.yz_button.clicked.connect(lambda: self.extract_side("YZ", self.vp_eng.coordinates[self.point_selected[0]], self.vp_eng.coordinates[self.point_selected[1]]))
+        # self.hBox = QHBoxLayout()
+        # self.hBox.addWidget(self.xy_button)
+        # self.hBox.addWidget(self.xz_button)
+        # self.hBox.addWidget(self.yz_button)
+
+        # self.main_layout.addLayout(self.hBox)
+
+    def reset(self, vp_eng):
+        self.vp_eng = vp_eng
+        self.point_selected = []
+
+        # init UI
+
         self.list_widget = QListWidget()
         self.list_widget.itemClicked.connect(self.item_click)
-        self.xy_button = QPushButton("Use XY")
-        self.xy_button.clicked.connect(lambda: self.extract_side("XY", self.vanish_point_eng.coordinates[self.point_selected[0]], self.vanish_point_eng.coordinates[self.point_selected[1]]))
-        self.xz_button = QPushButton("Use XZ")
-        self.xz_button.clicked.connect(lambda: self.extract_side("XZ", self.vanish_point_eng.coordinates[self.point_selected[0]], self.vanish_point_eng.coordinates[self.point_selected[1]]))
-        self.yz_button = QPushButton("Use YZ")
-        self.yz_button.clicked.connect(lambda: self.extract_side("YZ", self.vanish_point_eng.coordinates[self.point_selected[0]], self.vanish_point_eng.coordinates[self.point_selected[1]]))
-        self.hBox = QHBoxLayout()
-        self.hBox.addWidget(self.xy_button)
-        self.hBox.addWidget(self.xz_button)
-        self.hBox.addWidget(self.yz_button)
 
-        self.main_layout = QVBoxLayout()
-        self.main_layout.addWidget(self.list_widget)
-        self.main_layout.addLayout(self.hBox)
-
-        self.main_widget = QWidget()
-        self.main_widget.setLayout(self.main_layout)
-
-        self.setWidget(self.main_widget)
+        self.setWidget(self.list_widget)
 
         self.add_layer()
         self.add_layer()
         self.add_layer()
+
+        # self.main_layout = QVBoxLayout()
+        # self.main_layout.addWidget(self.list_widget)
+        #
+        # self.main_widget = QWidget()
+        # self.main_widget.setLayout(self.main_layout)
+        #
+        # self.setWidget(self.main_widget)
 
     def add_layer(self):
         index = self.list_widget.count()
@@ -101,17 +115,17 @@ class SelectInitCoordinate(QDockWidget):
         item.setData(Qt.UserRole, index)
         self.list_widget.insertItem(index, item)
         self.list_widget.setItemWidget(item, widget)
-        self.vanish_point_eng.coordinates.append([0, 0])
+        self.vp_eng.coordinates.append([0, 0])
         item.setSizeHint(widget.sizeHint())
 
-    def setText(self, coordinate):
+    def set_point_text(self, coordinate):
         widget = self.list_widget.itemWidget(self.list_widget.currentItem())
         widget.set_coordinate(coordinate)
 
     def extract_side(self, axis, point0, point1):
-        xvpoint = self.vanish_point_eng.vpoints[0]
-        yvpoint = self.vanish_point_eng.vpoints[1]
-        zvpoint = self.vanish_point_eng.vpoints[2]
+        xvpoint = self.vp_eng.vpoints[0]
+        yvpoint = self.vp_eng.vpoints[1]
+        zvpoint = self.vp_eng.vpoints[2]
 
         basename = self.window().input_file.name
 
@@ -153,5 +167,6 @@ class SelectInitCoordinate(QDockWidget):
 
     @pyqtSlot()
     def item_click(self):
-        self.window().centralWidget().view.set_coordinate_index(self.list_widget.currentItem().data(Qt.UserRole),
-                                                                self.setText)
+        self.window().centralWidget().graphics_view.set_coordinate_index(
+            self.list_widget.currentItem().data(Qt.UserRole),
+            self.set_point_text)

@@ -1,14 +1,15 @@
-from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 
-from PyQt5.QtWidgets import QMainWindow, QMenu, QAction
+from PyQt5.QtWidgets import QMainWindow, QMenu, QAction, QDesktopWidget
 
 from engine.circle_method import auto_detect_vp
 from engine.fix_perspective import FixPerspective
 from engine.mathsengine import rearrange_point
+from engine.vanishingpoint import Wizard
 from engine.vrml_creator import VrmlCreator
 from gui.centralwidget import CentralWidget
+from gui.dialog import show_dialog
 from gui.dockwidget.selectinitcoor import SelectInitCoordinate
 from gui.dockwidget.selectlinegroup import SelectLineGroup
 from util.filemanager import FileManager
@@ -18,7 +19,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.statusBar().showMessage('Ready')
-        screen_rect = QtWidgets.QDesktopWidget().screenGeometry(screen=-1)
+        screen_rect = QDesktopWidget().screenGeometry(screen=-1)
         self.width = 1600
         self.height = 900
         self.left = screen_rect.width() / 2 - self.width / 2
@@ -26,101 +27,154 @@ class MainWindow(QMainWindow):
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.setWindowTitle('DepthCreator')
 
+        self.vp_eng = None
+
         self.line_group_dock = None
-        self.init_coor_dock = None
+        self.point_dock = None
 
         self.input_file = FileManager("building.jpg")
-        self.central_widget = CentralWidget(self.input_file.base, self.load_new_image, flags=None)
+        self.central_widget = CentralWidget(self.input_file.base, self.on_image_loaded, flags=None)
         self.setCentralWidget(self.central_widget)
 
-        # menu
-        menubar = self.menuBar()
-        fileMenu = menubar.addMenu('File')
-        addMenu = menubar.addMenu('Add')
-        calMenu = menubar.addMenu('Calculate')
+        # main menu bar
+        menu_bar = self.menuBar()
+        file_menu = menu_bar.addMenu('File')
+        add_menu = menu_bar.addMenu('Add')
+        cal_menu = menu_bar.addMenu('Calculate')
+        wizard_menu = menu_bar.addMenu('Wizard')
 
-        # file Menu
-        impMenu = QMenu('Import', self)
-        impAct = QAction('Import mail', self)
-        impMenu.addAction(impAct)
+        # file_menu
+        open_submenu = QMenu('Open', self)
+        open_img_act = QAction(QIcon('res/icon/open-folder-outline.png'), 'Image', self)
+        open_img_act.triggered.connect(self.central_widget.open_file_name_dialog)
+        open_submenu.addAction(open_img_act)
+        file_menu.addMenu(open_submenu)
 
-        newAct = QAction(QIcon('res/icon/open-folder-outline.png'), 'Open', self)
-        newAct.triggered.connect(self.central_widget.open_file_name_dialog)
-
-        # add Menu
-        addLineGroupAct = QAction(QIcon('tick.png'), 'Add Line Group', self)
-        addLineGroupAct.triggered.connect(self.line_group_dock.add_line_group)
-        addMenu.addAction(addLineGroupAct)
+        # add_menu
+        add_line_group_act = QAction(QIcon('tick.png'), 'Add Line Group', self)
+        add_line_group_act.triggered.connect(self.window().line_group_dock.add_line_group)
+        add_menu.addAction(add_line_group_act)
 
         # calculate Menu
+        auto_detect_v_point_act = QAction(QIcon('tick.png'), 'Detect VPoints', self)
+        auto_detect_v_point_act.triggered.connect(self.detect_v_points)
+        cal_menu.addAction(auto_detect_v_point_act)
 
-        autoDetectVPointAct = QAction(QIcon('tick.png'), 'Detect VPoints', self)
-        autoDetectVPointAct.triggered.connect(self.detect_vpoints)
-        calMenu.addAction(autoDetectVPointAct)
+        # wizard_menu
+        define_plane_act = QAction(QIcon('tick.png'), 'Define a plane', self)
+        define_plane_act.triggered.connect(self.define_plane)
+        wizard_menu.addAction(define_plane_act)
+
+        define_height_act = QAction(QIcon('tick.png'), 'Set height reference', self)
+        define_height_act.triggered.connect(self.define_height)
+        wizard_menu.addAction(define_height_act)
+
+        measure_on_plane = QAction(QIcon('tick.png'), 'Measure on plane', self)
+        measure_on_plane.triggered.connect(self.measure_plane)
+        wizard_menu.addAction(measure_on_plane)
+
+        measure_height_act = QAction(QIcon('tick.png'), 'Measure height', self)
+        measure_height_act.triggered.connect(self.measure_height)
+        wizard_menu.addAction(measure_height_act)
 
         vanishingPntAct = QAction(QIcon('tick.png'), 'Vanishing Point', self)
         vanishingPntAct.triggered.connect(self.draw_vanishing_point)
-        calMenu.addAction(vanishingPntAct)
+        cal_menu.addAction(vanishingPntAct)
 
         fixPerspectiveAct = QAction(QIcon('tick.png'), 'Fix Perspective', self)
         fixPerspectiveAct.triggered.connect(self.fix_perspective)
-        calMenu.addAction(fixPerspectiveAct)
+        cal_menu.addAction(fixPerspectiveAct)
 
         extractThreeSidesAct = QAction(QIcon('tick.png'), 'Extract 3 sides', self)
         extractThreeSidesAct.triggered.connect(self.extract_three_side)
-        calMenu.addAction(extractThreeSidesAct)
+        cal_menu.addAction(extractThreeSidesAct)
 
         self.toolbar = self.addToolBar('Exit')
-        self.toolbar.addAction(newAct)
-
-        fileMenu.addAction(newAct)
-        fileMenu.addMenu(impMenu)
+        self.toolbar.addAction(open_img_act)
 
         self.show()
         self.showMaximized()
 
     def draw_vanishing_point(self):
-        x, y = self.vanish_point_eng.calculate_vanishing_point()
+        x, y = self.vp_eng.calculate_vanishing_point()
         self.central_widget.draw_point(x, y)
 
     def fix_perspective(self):
-        points = self.vanish_point_eng.get_coordinates()
+        points = self.vp_eng.get_coordinates()
         engine = FixPerspective(self.input_file.base, "output\\image_out.png", rearrange_point(points), 400, 400)
         engine.show()
 
     def extract_three_side(self):
-        points = self.vanish_point_eng.get_coordinates()
-        self.init_coor_dock.extract_side("XY", points[0], points[1])
-        self.init_coor_dock.extract_side("XZ", points[1], points[2])
-        self.init_coor_dock.extract_side("YZ", points[0], points[2])
+        points = self.vp_eng.get_coordinates()
+        self.point_dock.extract_side("XY", points[0], points[1])
+        self.point_dock.extract_side("XZ", points[1], points[2])
+        self.point_dock.extract_side("YZ", points[0], points[2])
         vrml_creator = VrmlCreator(self.input_file.name, 4, 4, 4)
         vrml_creator.create()
 
-    def detect_vpoints(self):
-        vpoints = auto_detect_vp(self.input_file, 2)
-        ordered_vpoints = []
-
-        while len(vpoints) > 0:
-            x_list = [e[0] for e in vpoints]
-            min_x = min(x_list)
-            min_index = x_list.index(min_x)
-            ordered_vpoints.append(vpoints.pop(min_index))
-
-        ordered_vpoints.insert(0, ordered_vpoints.pop())
-
-        self.vanish_point_eng.vpoints = ordered_vpoints
-        for vp in ordered_vpoints:
+    def detect_v_points(self):
+        v_points = auto_detect_vp(self.input_file)
+        self.vp_eng.vpoints = v_points
+        for vp in v_points:
             self.central_widget.draw_point(vp[0], vp[1])
 
-    def load_new_image(self, vanish_point_eng):
-        self.vanish_point_eng = vanish_point_eng
+    def define_plane(self):
+        show_dialog("Define a plane: Step 1",
+                    "Draw a line in the x-direction and specify its length.",
+                    on_button_clicked=self.define_plane_step_1)
+
+    def define_plane_step_1(self, i):
+        print(i.text() + " is clicked.")
+        if i.text() == "OK":
+            self.vp_eng.set_current_wizard(Wizard.DEFINE_PLANE)
+            print("wait for line")
+
+    def define_height(self):
+        show_dialog("Set height reference",
+                    "Draw a line and specify height reference.",
+                    on_button_clicked=self.handle_define_height)
+
+    def handle_define_height(self, button_clicked):
+        if button_clicked.text() == "OK":
+            self.vp_eng.set_current_wizard(Wizard.DEFINE_HEIGHT)
+
+    def measure_plane(self):
+        show_dialog("Measure length on plane",
+                    "Draw a line to measure length on the define plane.",
+                    on_button_clicked=self.handle_measure_plane)
+
+    def handle_measure_plane(self, button_clicked):
+        print(button_clicked.text() + " is clicked.")
+        if button_clicked.text() == "OK":
+            self.vp_eng.set_current_wizard(Wizard.MEASURE_ON_PLANE)
+            print("wait for measure line")
+
+    def measure_height(self):
+        show_dialog("Measure height",
+                    "Draw a line to measure height with respect to the defined plane.",
+                    on_button_clicked=self.handle_measure_height)
+
+    def handle_measure_height(self, button_clicked):
+        print(button_clicked.text() + " is clicked.")
+        if button_clicked.text() == "OK":
+            self.vp_eng.set_current_wizard(Wizard.MEASURE_HEIGHT)
+            print("wait for measure height line")
+
+    def on_image_loaded(self, vp_eng):
+        self.vp_eng = vp_eng
+        # init line group dock
         if self.line_group_dock is not None:
-            self.removeDockWidget(self.line_group_dock)
-        if self.init_coor_dock is not None:
-            self.removeDockWidget(self.init_coor_dock)
-        self.line_group_dock = SelectLineGroup(self.vanish_point_eng, "Line Group (Title)", self)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.line_group_dock)
-        self.init_coor_dock = SelectInitCoordinate(self.vanish_point_eng, "Input Coordinate (Title)", self)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.init_coor_dock)
+            self.line_group_dock.reset(vp_eng)
+        else:
+            self.line_group_dock = SelectLineGroup(self.vp_eng, "Line Group (Title)", self)
+            self.addDockWidget(Qt.RightDockWidgetArea, self.line_group_dock)
+        # point dock
+        if self.point_dock is not None:
+            self.point_dock.reset(vp_eng)
+        else:
+            self.point_dock = SelectInitCoordinate(self.vp_eng, "Input Coordinate (Title)", self)
+            self.addDockWidget(Qt.RightDockWidgetArea, self.point_dock)
+
+
 
 

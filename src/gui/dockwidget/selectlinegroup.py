@@ -3,16 +3,20 @@ from PyQt5.QtWidgets import QDockWidget, QListWidget, QListWidgetItem
 
 
 class SelectLineGroup(QDockWidget):
-    def __init__(self, vanish_point_eng, *__args):
+    def __init__(self, vp_eng, *__args):
         super().__init__(*__args)
+        self.listWidget = None
+        self.vp_eng = None
+        self.reset(vp_eng)
+
+    def reset(self, vp_eng):
         self.listWidget = QListWidget()
-        self.vanish_point_eng = vanish_point_eng
+        self.vp_eng = vp_eng
 
         self.add_line_group()
         self.add_line_group()
         self.add_line_group()
 
-        print("Set initial Line Group")
         self.listWidget.item(0).setSelected(True)
         self.listWidget.setFocus()
 
@@ -21,15 +25,12 @@ class SelectLineGroup(QDockWidget):
 
     def add_line_group(self):
         n = self.listWidget.count()
-        item = QListWidgetItem('Line Group ' + str(n+1))
+        item = QListWidgetItem('Line Group ' + str(n + 1))
         item.setData(Qt.UserRole, n)
         self.listWidget.addItem(item)
-        self.vanish_point_eng.lines.append([])
-        self.vanish_point_eng.vpoints.append([])
+        self.vp_eng.lines.append([])
+        self.vp_eng.vpoints.append([])
 
     @pyqtSlot()
     def item_click(self):
-        self.window().centralWidget().view.set_line_group(self.listWidget.currentItem().data(Qt.UserRole))
-        self.vanish_point_eng.set_line_group(self.listWidget.currentItem().data(Qt.UserRole))
-
-
+        self.vp_eng.set_line_group(self.listWidget.currentItem().data(Qt.UserRole))

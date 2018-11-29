@@ -10,7 +10,6 @@ class GraphicsView(QGraphicsView):
         self.center_y = self.viewport().size().height() / 2
         self.offset_x = 0
         self.offset_y = 0
-        self.line_group = 0
         self.coordinate_index = 0
         self.coordinate_set_callback = None
         self.ctrl_pressed = False
@@ -19,10 +18,6 @@ class GraphicsView(QGraphicsView):
         self.coordinate_index = index
         self.coordinate_set_callback = callback
         print("Coordinate Index " + str(index) + " is selected.")
-
-    def set_line_group(self, num):
-        self.line_group = num
-        print("Line Group " + str(num + 1) + " is selected.")
 
     def mousePressEvent(self, event):
         self.cam_x = event.pos().x()

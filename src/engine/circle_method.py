@@ -1,5 +1,5 @@
+import time
 import cv2
-import numpy as np
 
 from opencv_engine import *
 from engine.mathsengine import *
@@ -8,18 +8,20 @@ from util.draw_util import draw_line
 
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
-blue = (255, 0, 0)
+BLUE = (255, 0, 0)
 
-color_list = [GREEN, blue, RED]
+color_list = [GREEN, BLUE, RED]
 
 
-def auto_detect_vp(input_file, n_vp):
+def auto_detect_vp(input_file):
     np.random.seed(0)
 
     # Step1: Extract line segments
     img = cv2.imread(input_file.base)
     height, width, channels = img.shape
     grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    start_time = time.time()
 
     # Canny edge detection: convert to binary image for Hough Transform
     # Otsu´s Method to determine threshold
@@ -99,7 +101,7 @@ def auto_detect_vp(input_file, n_vp):
     index_in_band = None
     line_extracted = cv2.cvtColor(grey.copy(), cv2.COLOR_GRAY2RGB)
     line_left = total_lines
-    while line_left/total_lines > 0.25:
+    while line_left/total_lines > 0.25 and len(circles_extracted) < 3:
         n = len(circles_extracted)
         n_points = intersection_points.shape[0]
         print("No. of points: " + str(n_points))
@@ -153,6 +155,8 @@ def auto_detect_vp(input_file, n_vp):
         print("center: " + str(center))
         print("radius: " + str(radius))
 
+    end_time = time.time()
+    print("Timing: {}".format(end_time - start_time))
 
     cv2.imwrite(input_file.get_save_path("grey"), grey)
     cv2.imwrite(input_file.get_save_path("edge"), edges)
@@ -160,6 +164,17 @@ def auto_detect_vp(input_file, n_vp):
     cv2.imwrite(input_file.get_save_path("clustered"), line_extracted)
     cv2.imwrite(input_file.get_save_path("circle"), points_clustered)
 
-    print(v_points)
+    # init empty list
+    ordered_v_points = []
 
-    return v_points
+    # this while loop rearranges v points --> [vy, vz, vx]
+    while len(v_points) > 0:
+        x_list = [e[0] for e in v_points]
+        min_x = min(x_list)
+        min_index = x_list.index(min_x)
+        ordered_v_points.append(v_points.pop(min_index))
+
+    # rotate vx to the first index
+    ordered_v_points.insert(0, ordered_v_points.pop())
+
+    return ordered_v_points

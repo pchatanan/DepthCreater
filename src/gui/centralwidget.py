@@ -9,37 +9,40 @@ from util.filemanager import FileManager
 
 
 class CentralWidget(QWidget):
-    def __init__(self, img_path, load_new_image, flags, *args, **kwargs):
+    def __init__(self, img_path, on_image_loaded, flags, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
-        self.view = GraphicsView(self)
-        self.img_path = img_path
-        self.load_new_image = load_new_image
-        self.load_image(file_name=self.img_path)
+        # init graphics view and empty scene
+        self.graphics_view = GraphicsView(self)
+        self.graphics_scene = None
 
-        import_image_button = QPushButton("Import Image")
-        import_image_button.setToolTip('Select an image to be editted')
-        import_image_button.clicked.connect(self.on_click)
+        # init data and engine
+        self.vanish_point_eng = None
+        self.img_path = img_path
+
+        # load startup image
+        self.on_image_loaded = on_image_loaded
+        self.load_image(self.img_path)
+
+        # manage GUI
         add_button = QPushButton("Add line")
         add_button.clicked.connect(self.on_add_click)
         cancel_button = QPushButton("Cancel")
         add_point_button = QPushButton("Add point")
         add_point_button.clicked.connect(self.on_add_point_click)
 
-        hbox = QHBoxLayout()
-        hbox.addStretch(1)
-        hbox.addWidget(import_image_button, alignment=Qt.AlignCenter)
-        hbox.addWidget(cancel_button, alignment=Qt.AlignCenter)
-        hbox.addWidget(add_button, alignment=Qt.AlignCenter)
-        hbox.addWidget(add_point_button, alignment=Qt.AlignCenter)
-        hbox.addStretch(1)
+        bottom_buttons_view = QHBoxLayout()
+        bottom_buttons_view.addStretch(1)
+        bottom_buttons_view.addWidget(cancel_button, alignment=Qt.AlignCenter)
+        bottom_buttons_view.addWidget(add_button, alignment=Qt.AlignCenter)
+        bottom_buttons_view.addWidget(add_point_button, alignment=Qt.AlignCenter)
+        bottom_buttons_view.addStretch(1)
 
-        vbox = QVBoxLayout()
-        vbox.addWidget(self.view)
-        vbox.addLayout(hbox)
+        v_box = QVBoxLayout()
+        v_box.addWidget(self.graphics_view)
+        v_box.addLayout(bottom_buttons_view)
 
-        self.setLayout(vbox)
-
+        self.setLayout(v_box)
         self.show()
 
     def open_file_name_dialog(self):
@@ -49,30 +52,31 @@ class CentralWidget(QWidget):
         if file_name:
             self.window().input_file = FileManager(file_name)
             self.img_path = self.window().input_file.name
-            self.load_image(file_name=self.img_path)
+            self.load_image(self.img_path)
 
     def load_image(self, file_name):
-        pixMap = QPixmap(file_name)
-        self.vanish_point_eng = VanishingPointEng(pixMap.height(), pixMap.width())
-        self.load_new_image(self.vanish_point_eng)
-        self.scene = GraphicsScene(self.vanish_point_eng)
-        print(pixMap.size())
-        self.scene.addPixmap(pixMap)
-        self.view.setScene(self.scene)
-        print('Openning: ' + file_name)
-
-    @pyqtSlot()
-    def on_click(self):
-        self.open_file_name_dialog()
+        print('Opening: ' + file_name)
+        pix_map = QPixmap(file_name)
+        image_shape = (pix_map.width(), pix_map.height())
+        # reset engine
+        self.vanish_point_eng = VanishingPointEng()
+        self.vanish_point_eng.set_shape(image_shape)
+        self.graphics_scene = GraphicsScene(self.vanish_point_eng, self)
+        self.graphics_scene.addPixmap(pix_map)
+        self.graphics_view.setScene(self.graphics_scene)
+        self.on_image_loaded(self.vanish_point_eng)
 
     @pyqtSlot()
     def on_add_click(self):
         self.window().line_group_dock.add_line_group()
-        self.view.viewport().setCursor(Qt.CrossCursor)
+        self.graphics_view.viewport().setCursor(Qt.CrossCursor)
 
     @pyqtSlot()
     def on_add_point_click(self):
-        self.window().init_coor_dock.add_layer()
+        self.window().point_dock.add_layer()
 
     def draw_point(self, x, y):
-        self.scene.draw_point(x, y)
+        self.graphics_scene.draw_point(x, y)
+
+    def get_graphics_scene(self):
+        return self.graphics_scene
