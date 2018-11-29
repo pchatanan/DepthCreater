@@ -1,6 +1,8 @@
 from PyQt5.QtCore import pyqtSlot, Qt
 from PyQt5.QtWidgets import QDockWidget, QListWidget, QListWidgetItem
 
+from engine.vanishingpoint import Wizard
+
 
 class SelectLineGroup(QDockWidget):
     def __init__(self, vp_eng, *__args):
@@ -33,4 +35,5 @@ class SelectLineGroup(QDockWidget):
 
     @pyqtSlot()
     def item_click(self):
+        self.vp_eng.set_current_wizard(Wizard.ADD_LINE)
         self.vp_eng.set_line_group(self.listWidget.currentItem().data(Qt.UserRole))

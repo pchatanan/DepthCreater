@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QDockWidget, QListWidget, QListWidgetItem, QLineEdit
 
 from engine.fix_perspective import FixPerspective
 from engine.mathsengine import line, intersection, calculate_compass_bearing, reflect_y, rearrange_point
+from engine.vanishingpoint import Wizard
 
 
 class LayerWidget(QWidget):
@@ -167,6 +168,7 @@ class SelectInitCoordinate(QDockWidget):
 
     @pyqtSlot()
     def item_click(self):
+        self.vp_eng.set_current_wizard(Wizard.ADD_POINT)
         self.window().centralWidget().graphics_view.set_coordinate_index(
             self.list_widget.currentItem().data(Qt.UserRole),
             self.set_point_text)

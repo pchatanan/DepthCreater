@@ -11,6 +11,7 @@ class Wizard(Enum):
     MEASURE_ON_PLANE = 3
     DEFINE_HEIGHT = 4
     MEASURE_HEIGHT = 5
+    ADD_POINT = 6
 
 
 class VanishingPointEng:
