@@ -75,8 +75,8 @@ class CentralWidget(QWidget):
     def on_add_point_click(self):
         self.window().point_dock.add_layer()
 
-    def draw_point(self, x, y):
-        self.graphics_scene.draw_point(x, y)
+    def draw_point(self, point, index=None):
+        self.graphics_scene.draw_vp(point, index)
 
     def get_graphics_scene(self):
         return self.graphics_scene

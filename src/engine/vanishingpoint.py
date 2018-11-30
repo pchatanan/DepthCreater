@@ -105,15 +105,16 @@ class VanishingPointEng:
 
         print("vPoint: " + str(x) + ", " + str(y))
 
-
-        return x, y
+        return x[0], y[0]
 
     def add_coordinate(self, index, coordinate):
-        print("setting")
         self.coordinates[index] = coordinate
 
     def get_coordinates(self):
         return self.coordinates
+
+    def add_vpoint(self, index, vpoint):
+        self.vpoints[index] = vpoint
 
     def set_current_wizard(self, wizard):
         self.current_wizard = wizard

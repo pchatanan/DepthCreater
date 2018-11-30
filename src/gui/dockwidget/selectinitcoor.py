@@ -119,7 +119,7 @@ class SelectInitCoordinate(QDockWidget):
         self.vp_eng.coordinates.append([0, 0])
         item.setSizeHint(widget.sizeHint())
 
-    def set_point_text(self, coordinate):
+    def on_point_selected(self, coordinate):
         widget = self.list_widget.itemWidget(self.list_widget.currentItem())
         widget.set_coordinate(coordinate)
 
@@ -169,6 +169,5 @@ class SelectInitCoordinate(QDockWidget):
     @pyqtSlot()
     def item_click(self):
         self.vp_eng.set_current_wizard(Wizard.ADD_POINT)
-        self.window().centralWidget().graphics_view.set_coordinate_index(
-            self.list_widget.currentItem().data(Qt.UserRole),
-            self.set_point_text)
+        index = self.list_widget.currentItem().data(Qt.UserRole)
+        self.window().centralWidget().graphics_view.set_coordinate_index(index, self.on_point_selected)

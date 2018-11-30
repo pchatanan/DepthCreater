@@ -12,6 +12,7 @@ from gui.centralwidget import CentralWidget
 from gui.dialog import show_dialog
 from gui.dockwidget.selectinitcoor import SelectInitCoordinate
 from gui.dockwidget.selectlinegroup import SelectLineGroup
+from opencv_engine import sort_point_list
 from util.filemanager import FileManager
 
 
@@ -36,6 +37,8 @@ class MainWindow(QMainWindow):
         self.central_widget = CentralWidget(self.input_file.abspath, self.on_image_loaded, flags=None)
         self.setCentralWidget(self.central_widget)
 
+        self.line_group_dock.addCallback()
+
         # main menu bar
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('File')
@@ -45,7 +48,7 @@ class MainWindow(QMainWindow):
 
         # file_menu
         open_submenu = QMenu('Open', self)
-        open_img_act = QAction(QIcon('res/icon/open-folder-outline.png'), 'Image', self)
+        open_img_act = QAction(QIcon('res/icon/open-folder.png'), 'Image', self)
         open_img_act.triggered.connect(self.central_widget.open_file_name_dialog)
         open_submenu.addAction(open_img_act)
         file_menu.addMenu(open_submenu)
@@ -56,9 +59,13 @@ class MainWindow(QMainWindow):
         add_menu.addAction(add_line_group_act)
 
         # calculate Menu
-        auto_detect_v_point_act = QAction(QIcon('tick.png'), 'Detect VPoints', self)
+        auto_detect_v_point_act = QAction(QIcon('res/icon/cube.png'), 'Detect Vanishing Points', self)
         auto_detect_v_point_act.triggered.connect(self.detect_v_points)
         cal_menu.addAction(auto_detect_v_point_act)
+
+        calculate_intersection_act = QAction(QIcon('res/icon/intersection.png'), 'Calculate Intersection', self)
+        calculate_intersection_act.triggered.connect(self.draw_vanishing_point)
+        cal_menu.addAction(calculate_intersection_act)
 
         # wizard_menu
         define_plane_act = QAction(QIcon('tick.png'), 'Define a plane', self)
@@ -77,9 +84,7 @@ class MainWindow(QMainWindow):
         measure_height_act.triggered.connect(self.measure_height)
         wizard_menu.addAction(measure_height_act)
 
-        vanishingPntAct = QAction(QIcon('tick.png'), 'Vanishing Point', self)
-        vanishingPntAct.triggered.connect(self.draw_vanishing_point)
-        cal_menu.addAction(vanishingPntAct)
+
 
         fixPerspectiveAct = QAction(QIcon('tick.png'), 'Fix Perspective', self)
         fixPerspectiveAct.triggered.connect(self.fix_perspective)
@@ -89,15 +94,18 @@ class MainWindow(QMainWindow):
         extractThreeSidesAct.triggered.connect(self.extract_three_side)
         cal_menu.addAction(extractThreeSidesAct)
 
-        self.toolbar = self.addToolBar('Exit')
+        # toolbar
+        self.toolbar = self.addToolBar('Toolbar')
         self.toolbar.addAction(open_img_act)
+        self.toolbar.addAction(auto_detect_v_point_act)
+        self.toolbar.addAction(calculate_intersection_act)
 
         self.show()
         self.showMaximized()
 
     def draw_vanishing_point(self):
-        x, y = self.vp_eng.calculate_vanishing_point()
-        self.central_widget.draw_point(x, y)
+        point = self.vp_eng.calculate_vanishing_point()
+        self.central_widget.draw_point(point)
 
     def fix_perspective(self):
         points = self.vp_eng.get_coordinates()
@@ -114,9 +122,8 @@ class MainWindow(QMainWindow):
 
     def detect_v_points(self):
         v_points = auto_detect_vp(self.input_file)
-        self.vp_eng.vpoints = v_points
-        for vp in v_points:
-            self.central_widget.draw_point(vp[0], vp[1])
+        for index, vp in enumerate(v_points):
+            self.central_widget.draw_point(vp, index)
 
     def define_plane(self):
         show_dialog("Define a plane: Step 1",

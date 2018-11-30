@@ -164,17 +164,4 @@ def auto_detect_vp(input_file):
     cv2.imwrite(input_file.get_save_path("clustered"), line_extracted)
     cv2.imwrite(input_file.get_save_path("circle"), points_clustered)
 
-    # init empty list
-    ordered_v_points = []
-
-    # this while loop rearranges v points --> [vy, vz, vx]
-    while len(v_points) > 0:
-        x_list = [e[0] for e in v_points]
-        min_x = min(x_list)
-        min_index = x_list.index(min_x)
-        ordered_v_points.append(v_points.pop(min_index))
-
-    # rotate vx to the first index
-    ordered_v_points.insert(0, ordered_v_points.pop())
-
-    return ordered_v_points
+    return sort_point_list(v_points)

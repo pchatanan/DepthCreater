@@ -23,6 +23,8 @@ class GraphicsScene(QGraphicsScene):
         self.points = []
         self.point_labels = []
         self.widget_context = widget_context
+        self.vpoints = []
+        self.vpoint_labels = []
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
@@ -54,14 +56,14 @@ class GraphicsScene(QGraphicsScene):
         line = (x1, y1, x2, y2)
         graphic_view = self.get_graphic_view()
         if self.scene_mode == self.MODE_DRAW:
-            #  TODO: specify what to do with the line here
             self.vp_eng.add_line(line, self.on_line_added)
             graphic_view.viewport().setCursor(Qt.ArrowCursor)
         elif self.scene_mode == self.MODE_PRESS:
+            point = [x1, y1]
             index = graphic_view.coordinate_index
-            print("clicked!! at " + str(index))
-            self.vp_eng.add_coordinate(index, [x1, y1])
-            graphic_view.coordinate_set_callback([x1, y1])
+
+            self.vp_eng.add_coordinate(index, point)
+            graphic_view.coordinate_set_callback(point)
 
             circle_item = QGraphicsEllipseItem(x1 - 5, y1 - 5, 10, 10)
             circle_item.setPen(QPen(self.get_pen_color(), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
@@ -88,7 +90,8 @@ class GraphicsScene(QGraphicsScene):
         if wizard == Wizard.ADD_LINE:
             print("Line is added.")
         elif wizard == Wizard.DEFINE_PLANE:
-            text, ok = show_input_dialog(self.widget_context, "Length Input", "Please input " + "x" if step == 1 else "y" + " length reference.")
+            text, ok = show_input_dialog(self.widget_context, "Length Input",
+                                         "Please input " + "x" if step == 1 else "y" + " length reference.")
             if ok:
                 self.vp_eng.set_length(float(text), wizard, step, self.handle_on_length_set)
         elif wizard == Wizard.DEFINE_HEIGHT:
@@ -115,6 +118,38 @@ class GraphicsScene(QGraphicsScene):
         self.addEllipse(x - 10, y - 10, 20, 20,
                         QPen(self.get_pen_color(), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin),
                         QBrush(Qt.black, Qt.SolidPattern))
+
+    def draw_vp(self, point, index):
+        x, y = point
+        r = 10
+
+        graphic_view = self.get_graphic_view()
+
+        if index is None:
+            index = self.vp_eng.get_line_group()
+
+        graphic_view.vp_drawn_callback(point, index)
+        self.vp_eng.add_vpoint(index, point)
+
+        circle_item = QGraphicsEllipseItem(x - r, y - r, 2 * r, 2 * r)
+        circle_item.setPen(QPen(self.get_pen_color(), 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        circle_item.setBrush(QBrush(Qt.black, Qt.SolidPattern))
+
+        text_item = QGraphicsTextItem()
+        text_item.setPos(x, y)
+        text_item.setPlainText("VP " + str(index + 1))
+
+        if len(self.vpoints) <= index:
+            self.vpoints.append(circle_item)
+            self.vpoint_labels.append(text_item)
+        else:
+            self.removeItem(self.vpoints.pop(index))
+            self.vpoints.insert(index, circle_item)
+
+            self.removeItem(self.vpoint_labels.pop(index))
+            self.vpoint_labels.insert(index, text_item)
+        self.addItem(circle_item)
+        self.addItem(text_item)
 
     def get_pen_color(self):
         if self.vp_eng.current_wizard == Wizard.ADD_LINE:

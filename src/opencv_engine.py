@@ -77,3 +77,10 @@ def create_blank(width, height, rgb_color=(0, 0, 0)):
     image[:] = color
 
     return image
+
+
+def sort_point_list(points):
+    x_vp_list = [point[0] for point in points]
+    indexes = sorted(range(len(x_vp_list)), key=lambda k: x_vp_list[k])
+    temp = [points[index] for index in indexes]
+    return temp

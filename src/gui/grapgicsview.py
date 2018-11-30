@@ -12,12 +12,15 @@ class GraphicsView(QGraphicsView):
         self.offset_y = 0
         self.coordinate_index = 0
         self.coordinate_set_callback = None
+        self.vp_drawn_callback = None
         self.ctrl_pressed = False
 
     def set_coordinate_index(self, index, callback):
         self.coordinate_index = index
         self.coordinate_set_callback = callback
-        print("Coordinate Index " + str(index) + " is selected.")
+
+    def set_on_vp_drawn(self, callback):
+        self.vp_drawn_callback = callback
 
     def mousePressEvent(self, event):
         self.cam_x = event.pos().x()
