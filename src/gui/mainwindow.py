@@ -15,6 +15,9 @@ from gui.dockwidget.selectlinegroup import SelectLineGroup
 from opencv_engine import sort_point_list
 from util.filemanager import FileManager
 
+INDEX_TO_ID_2 = [1, 0]
+INDEX_TO_ID_3 = [1, 2, 0]
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -34,7 +37,7 @@ class MainWindow(QMainWindow):
         self.point_dock = None
 
         self.input_file = FileManager("./sample_images/building.jpg")
-        self.central_widget = CentralWidget(self.input_file.abspath, self.on_image_loaded, flags=None)
+        self.central_widget = CentralWidget(self.input_file, self.on_image_loaded, flags=None)
         self.setCentralWidget(self.central_widget)
 
         self.line_group_dock.addCallback()
@@ -68,21 +71,21 @@ class MainWindow(QMainWindow):
         cal_menu.addAction(calculate_intersection_act)
 
         # wizard_menu
-        define_plane_act = QAction(QIcon('tick.png'), 'Define a plane', self)
-        define_plane_act.triggered.connect(self.define_plane)
-        wizard_menu.addAction(define_plane_act)
-
-        define_height_act = QAction(QIcon('tick.png'), 'Set height reference', self)
+        define_height_act = QAction(QIcon('tick.png'), 'Set reference', self)
         define_height_act.triggered.connect(self.define_height)
         wizard_menu.addAction(define_height_act)
 
-        measure_on_plane = QAction(QIcon('tick.png'), 'Measure on plane', self)
+        measure_on_plane = QAction(QIcon('tick.png'), 'Measure length on plane', self)
         measure_on_plane.triggered.connect(self.measure_plane)
         wizard_menu.addAction(measure_on_plane)
 
         measure_height_act = QAction(QIcon('tick.png'), 'Measure height', self)
         measure_height_act.triggered.connect(self.measure_height)
         wizard_menu.addAction(measure_height_act)
+
+        wrap_act = QAction(QIcon('tick.png'), 'Wrap perspective', self)
+        wrap_act.triggered.connect(self.wrap_plane)
+        wizard_menu.addAction(wrap_act)
 
 
 
@@ -105,7 +108,8 @@ class MainWindow(QMainWindow):
 
     def draw_vanishing_point(self):
         point = self.vp_eng.calculate_vanishing_point()
-        self.central_widget.draw_point(point)
+        index = self.vp_eng.get_line_group()
+        self.central_widget.draw_point(point, index)
 
     def fix_perspective(self):
         points = self.vp_eng.get_coordinates()
@@ -122,19 +126,16 @@ class MainWindow(QMainWindow):
 
     def detect_v_points(self):
         v_points = auto_detect_vp(self.input_file)
+
+        ref_dict = INDEX_TO_ID_3 if len(v_points) > 2 else INDEX_TO_ID_2
+
+        # retrieve id context
+        temp = self.vp_eng.get_line_group()
         for index, vp in enumerate(v_points):
-            self.central_widget.draw_point(vp, index)
-
-    def define_plane(self):
-        show_dialog("Define a plane: Step 1",
-                    "Draw a line in the x-direction and specify its length.",
-                    on_button_clicked=self.define_plane_step_1)
-
-    def define_plane_step_1(self, i):
-        print(i.text() + " is clicked.")
-        if i.text() == "OK":
-            self.vp_eng.set_current_wizard(Wizard.DEFINE_PLANE)
-            print("wait for line")
+            self.vp_eng.set_line_group(ref_dict[index])
+            self.central_widget.draw_point(vp, ref_dict[index])
+        # set id context back
+        self.vp_eng.set_line_group(temp)
 
     def define_height(self):
         show_dialog("Set height reference",
@@ -143,7 +144,7 @@ class MainWindow(QMainWindow):
 
     def handle_define_height(self, button_clicked):
         if button_clicked.text() == "OK":
-            self.vp_eng.set_current_wizard(Wizard.DEFINE_HEIGHT)
+            self.vp_eng.set_current_wizard(Wizard.SET_REF_LENGTH)
 
     def measure_plane(self):
         show_dialog("Measure length on plane",
@@ -155,6 +156,11 @@ class MainWindow(QMainWindow):
         if button_clicked.text() == "OK":
             self.vp_eng.set_current_wizard(Wizard.MEASURE_ON_PLANE)
             print("wait for measure line")
+
+    def wrap_plane(self):
+        self.vp_eng.wrap_perspective()
+        show_dialog("Callback",
+                    "Wrapping done!")
 
     def measure_height(self):
         show_dialog("Measure height",

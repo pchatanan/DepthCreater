@@ -48,14 +48,26 @@ def get_boundary(h_inv, corners):
 
     for p in corners:
         temp_p = h_inv.dot(p)
-        temp_p /= temp_p[-1]
+        print("------------------")
+        print(p)
+        print(temp_p)
+        if abs(temp_p[-1]) > 0.000001:
+            temp_p /= temp_p[-1]
+        print(temp_p)
         temp.append(temp_p.astype(int))
 
     mat = np.vstack(tuple(temp))
     max = mat.max(axis=0)
     min = mat.min(axis=0)
 
-    return min[1], max[1], min[0], max[0]
+    print(mat)
+    print(max)
+    print(min)
+
+    #min_y, max_y, min_x, max_x
+    min_y = mat[0, 0] if mat[0, 0] < mat[1, 1] else mat[1, 1]
+    min_x = mat[1, 0] if mat[1, 0] < mat[1, 1] else mat[1, 1]
+    return min_y, mat[2, 1], min_x, mat[3, 0]
 
 
 def wrap_perspective(h, boundary, src_img):

@@ -9,7 +9,7 @@ from util.filemanager import FileManager
 
 
 class CentralWidget(QWidget):
-    def __init__(self, img_path, on_image_loaded, flags, *args, **kwargs):
+    def __init__(self, file, on_image_loaded, flags, *args, **kwargs):
         super().__init__(flags, *args, **kwargs)
 
         # init graphics view and empty scene
@@ -18,11 +18,11 @@ class CentralWidget(QWidget):
 
         # init data and engine
         self.vanish_point_eng = None
-        self.img_path = img_path
+        self.file = file
 
         # load startup image
         self.on_image_loaded = on_image_loaded
-        self.load_image(self.img_path)
+        self.load_image(file)
 
         # manage GUI
         add_button = QPushButton("Add line")
@@ -50,17 +50,16 @@ class CentralWidget(QWidget):
         file_name, _ = QFileDialog.getOpenFileName(None, "Select an image", "",
                                                    "Images (*.png *.jpg);;All Files (*)", options=options)
         if file_name:
-            self.window().input_file = FileManager(file_name)
-            self.img_path = self.window().input_file.abspath
-            self.load_image(self.img_path)
+            file = FileManager(file_name)
+            self.window().input_file = file
+            self.load_image(file)
 
-    def load_image(self, file_name):
-        print('Opening: ' + file_name)
-        pix_map = QPixmap(file_name)
-        image_shape = (pix_map.width(), pix_map.height())
+    def load_image(self, file):
+        file_path = file.abspath
+        print('Opening: ' + file_path)
+        pix_map = QPixmap(file_path)
         # reset engine
-        self.vanish_point_eng = VanishingPointEng()
-        self.vanish_point_eng.set_shape(image_shape)
+        self.vanish_point_eng = VanishingPointEng(file)
         self.graphics_scene = GraphicsScene(self.vanish_point_eng, self)
         self.graphics_scene.addPixmap(pix_map)
         self.graphics_view.setScene(self.graphics_scene)
