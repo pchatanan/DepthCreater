@@ -3,13 +3,15 @@ from PyQt5.QtWidgets import QDockWidget, QListWidget, QListWidgetItem, QWidget, 
 
 from engine.vanishingpoint import Wizard
 
+LINE_GROUP = ["x", "y", "z"]
+
 
 class LineGroupWidget(QWidget):
 
     def __init__(self, index, *__args):
         super().__init__(*__args)
         self.index = index
-        self.ui_layername = QLabel("Line Group " + str(index + 1))
+        self.ui_layername = QLabel("{}-axis".format(LINE_GROUP[index]))
         self.coordinate_text = QLabel("(-,-)")
 
         self.hBox0 = QHBoxLayout()
@@ -19,8 +21,8 @@ class LineGroupWidget(QWidget):
 
         self.setLayout(self.hBox0)
 
-    def set_coordinate(self, coordinate):
-        text = ("({:.1f}, {:.1f})".format(coordinate[0], coordinate[1]))
+    def set_coordinate(self, point):
+        text = ("V{}({:.1f}, {:.1f})".format(LINE_GROUP[self.index], point[0], point[1]))
         self.coordinate_text.setText(text)
 
 
@@ -55,8 +57,6 @@ class SelectLineGroup(QDockWidget):
         item.setData(Qt.UserRole, index)
         self.listWidget.addItem(item)
         self.listWidget.setItemWidget(item, widget)
-        self.vp_eng.lines.append([])
-        self.vp_eng.vpoints.append([])
         item.setSizeHint(widget.sizeHint())
 
     def on_vp_drawn(self, coordinate, row):

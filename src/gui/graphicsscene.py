@@ -26,6 +26,21 @@ class GraphicsScene(QGraphicsScene):
         self.vpoints = []
         self.vpoint_labels = []
 
+        self.vp_dict = {
+            "x": {
+                "vp": None,
+                "label": None
+            },
+            "y": {
+                "vp": None,
+                "label": None
+            },
+            "z": {
+                "vp": None,
+                "label": None
+            }
+        }
+
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
         self.views()[0].set_center(event.scenePos())
@@ -86,30 +101,28 @@ class GraphicsScene(QGraphicsScene):
             self.addItem(text_item)
         self.scene_mode = self.MODE_IDLE
 
-    def on_line_added(self, wizard, step):
+    def on_line_added(self, wizard, data=None):
         if wizard == Wizard.ADD_LINE:
             print("Line is added.")
-        elif wizard == Wizard.DEFINE_PLANE:
-            text, ok = show_input_dialog(self.widget_context, "Length Input",
-                                         "Please input " + "x" if step == 1 else "y" + " length reference.")
+        elif wizard == Wizard.SET_REF_LENGTH:
+            axis = self.vp_eng.get_key_from_id()
+            text, ok = show_input_dialog(self.widget_context, "Reference Length Input",
+                                         "Detected {}-axis: Please input length reference.".format(axis))
             if ok:
-                self.vp_eng.set_length(float(text), wizard, step, self.handle_on_length_set)
-        elif wizard == Wizard.DEFINE_HEIGHT:
-            text, ok = show_input_dialog(self.widget_context, "Length Input", "Please input height reference.")
-            if ok:
-                self.vp_eng.set_length(float(text), wizard, step, self.handle_on_length_set)
+                self.vp_eng.set_length(float(text), wizard, self.handle_on_length_set)
+        elif wizard == Wizard.MEASURE_ON_PLANE:
+            show_dialog("Length calculated",
+                        "The length is approximately {}".format(data))
+        elif wizard == Wizard.MEASURE_HEIGHT:
+            show_dialog("Length calculated",
+                        "The length is approximately {:.1f}".format(data))
 
-    def handle_on_length_set(self, wizard, step):
-        if wizard == Wizard.DEFINE_PLANE:
-            if step == 1:
-                show_dialog("Define a plane: Step 2",
-                            "Draw a line in the y-direction and specify its length.")
-            if step == 2:
-                show_dialog("End of define plane wizard",
-                            "Your XY-plane is set.")
-        elif wizard == Wizard.DEFINE_HEIGHT:
-            show_dialog("End of define height wizard",
-                        "Height is set.")
+    def handle_on_length_set(self, wizard):
+        if wizard == Wizard.SET_REF_LENGTH:
+            axis = self.vp_eng.get_key_from_id()
+            show_dialog("Callback",
+                        "Reference length in the {}-axis is set.".format(axis))
+            print(self.vp_eng.calibration["x"])
 
     def get_graphic_view(self):
         return self.views()[0]
@@ -120,13 +133,12 @@ class GraphicsScene(QGraphicsScene):
                         QBrush(Qt.black, Qt.SolidPattern))
 
     def draw_vp(self, point, index):
+        key = self.vp_eng.get_key_from_id(index)
+        print("drawing at {} {}".format(point, key))
         x, y = point
         r = 10
 
         graphic_view = self.get_graphic_view()
-
-        if index is None:
-            index = self.vp_eng.get_line_group()
 
         graphic_view.vp_drawn_callback(point, index)
         self.vp_eng.add_vpoint(index, point)
@@ -137,17 +149,14 @@ class GraphicsScene(QGraphicsScene):
 
         text_item = QGraphicsTextItem()
         text_item.setPos(x, y)
-        text_item.setPlainText("VP " + str(index + 1))
+        text_item.setPlainText("V{}".format(key))
 
-        if len(self.vpoints) <= index:
-            self.vpoints.append(circle_item)
-            self.vpoint_labels.append(text_item)
-        else:
-            self.removeItem(self.vpoints.pop(index))
-            self.vpoints.insert(index, circle_item)
+        if self.vp_dict[key]["vp"] is not None:
+            self.removeItem(self.vp_dict[key]["vp"])
+            self.removeItem(self.vp_dict[key]["label"])
 
-            self.removeItem(self.vpoint_labels.pop(index))
-            self.vpoint_labels.insert(index, text_item)
+        self.vp_dict[key]["vp"] = circle_item
+        self.vp_dict[key]["label"] = text_item
         self.addItem(circle_item)
         self.addItem(text_item)
 
@@ -156,7 +165,7 @@ class GraphicsScene(QGraphicsScene):
             return LINE_COLORS[self.vp_eng.get_line_group()]
         elif self.vp_eng.current_wizard == Wizard.ADD_POINT:
             return Qt.white
-        elif self.vp_eng.current_wizard == Wizard.DEFINE_HEIGHT:
+        elif self.vp_eng.current_wizard == Wizard.SET_REF_LENGTH:
             return Qt.yellow
         else:
             return Qt.black
